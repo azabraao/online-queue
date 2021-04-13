@@ -32,7 +32,7 @@
     </form>
 
     <script>
-      let socket = io("http://localhost:3000");
+      let socket = io(window.location.origin);
 
       function renderPerson(person) {
         $("#queue").append(`<li>${person.name}</li>`);
