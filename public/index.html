@@ -65,7 +65,9 @@
     </form>
 
     <script>
-      !!localStorage.personId && $("body").addClass("isOnQueue");
+      window.onbeforeunload = function () {
+        return "Ei! Você vai perder sua posição na fila";
+      };
 
       let socket = io(window.location.origin);
 
@@ -74,17 +76,14 @@
       }
 
       socket.on("render all on queue", function (people) {
-        console.log(people);
-
         let positionOnQueue;
         people.forEach((person, id) => {
-          if (Number(person.id) === Number(localStorage.personId))
-            positionOnQueue = id + 1;
+          if (person.id === socket.id) positionOnQueue = id + 1;
         });
 
         if (people.length) {
           const pageTitle =
-            Number(people[0].id) === Number(localStorage.personId)
+            people[0].id === socket.id
               ? "É a sua vez!"
               : positionOnQueue
               ? `Posição: ${positionOnQueue}`
@@ -97,15 +96,15 @@
 
         $("#queue").empty();
 
-        people.forEach((person, id) => {
-          renderPerson(person, id);
+        people.forEach((person) => {
+          renderPerson(person);
         });
       });
 
       $("#leaveQueue").on("click", function () {
         $("body").toggleClass("isOnQueue");
-        socket.emit("leave queue", localStorage.personId);
-        localStorage.removeItem("personId");
+        socket.emit("leave queue");
+        // localStorage.removeItem("personId");
       });
 
       $("#form").on("submit", function (event) {
@@ -114,15 +113,14 @@
         event.preventDefault();
 
         const name = $("input[name=name]").val();
-        const id = new Date().getMilliseconds() * Math.random();
-
-        localStorage.personId = id;
+        const id = socket.id;
+        //
+        // localStorage.personId = id;
 
         if (name.length) {
           let person = { name, id };
 
           renderPerson(person);
-
           socket.emit("enter on queue", person);
         }
       });
