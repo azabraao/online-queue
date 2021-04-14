@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Online Queue</title>
+    <title>Filinha online!</title>
     <script
       src="https://code.jquery.com/jquery-3.6.0.min.js"
       integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
@@ -15,12 +15,44 @@
       integrity="sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh"
       crossorigin="anonymous"
     ></script>
+
+    <style>
+      #leaveQueue {
+        display: none;
+      }
+
+      .isOnQueue #leaveQueue {
+        display: block;
+      }
+
+      .isOnQueue #form {
+        display: none;
+      }
+
+      .queue li:first-child::before {
+        content: "É a vez de ";
+      }
+
+      .queue li:first-child {
+        background: red;
+        display: inline-block;
+        margin-bottom: 5px;
+        color: white;
+        padding: 4px 8px;
+      }
+    </style>
   </head>
   <body>
-    <ul id="queue"></ul>
+    <div class="queue">
+      <h2>A fila:</h2>
+      <ul id="queue"></ul>
+    </div>
 
+    <button id="leaveQueue">sair da fila</button>
     <form id="form">
-      <label for="name">Your name</label>
+      <br />
+      <label for="name">qual é teu nome?</label>
+      <br />
       <input
         type="text"
         name="name"
@@ -28,37 +60,67 @@
         placeholder="Say your name"
         required
       />
-      <input type="submit" />
+      <input type="submit" value="guarda meu lugar ae" />
     </form>
 
     <script>
+      !!localStorage.personId && $("body").addClass("isOnQueue");
+
       let socket = io(window.location.origin);
 
       function renderPerson(person) {
         $("#queue").append(`<li>${person.name}</li>`);
       }
 
-      socket.on("newOnQueue", function (person) {
-        renderPerson(person);
+      socket.on("render all on queue", function (people) {
+        console.log(people);
+
+        let positionOnQueue;
+        people.forEach((person, id) => {
+          if (Number(person.id) === Number(localStorage.personId))
+            positionOnQueue = id + 1;
+        });
+
+        if (people.length) {
+          const pageTitle =
+            Number(people[0].id) === Number(localStorage.personId)
+              ? "É a sua vez!"
+              : positionOnQueue
+              ? `Posição: ${positionOnQueue}`
+              : "Filinha online!";
+
+          $(document).prop("title", pageTitle);
+        }
+
+        $("#queue").empty();
+
+        people.forEach((person, id) => {
+          renderPerson(person, id);
+        });
       });
 
-      socket.on("peopleOnQueue", function (people) {
-        for (person of people) {
-          renderPerson(person);
-        }
+      $("#leaveQueue").on("click", function () {
+        $("body").toggleClass("isOnQueue");
+        socket.emit("leave queue", localStorage.personId);
+        localStorage.removeItem("personId");
       });
 
       $("#form").on("submit", function (event) {
+        $("body").toggleClass("isOnQueue");
+
         event.preventDefault();
 
-        let name = $("input[name=name]").val();
+        const name = $("input[name=name]").val();
+        const id = new Date().getMilliseconds() * Math.random();
+
+        localStorage.personId = id;
 
         if (name.length) {
-          let person = { name };
+          let person = { name, id };
 
           renderPerson(person);
 
-          socket.emit("enterOnQueue", person);
+          socket.emit("enter on queue", person);
         }
       });
     </script>

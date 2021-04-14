@@ -19,14 +19,22 @@ let peopleOnQueue = [];
 io.on("connection", (socket) => {
   console.log("Socked connected", socket.id);
 
-  socket.emit("peopleOnQueue", peopleOnQueue);
+  socket.emit("render all on queue", peopleOnQueue);
 
-  socket.on("enterOnQueue", (data) => {
+  socket.on("enter on queue", (data) => {
     peopleOnQueue.push(data);
-    socket.broadcast.emit("newOnQueue", data);
+    console.log(peopleOnQueue);
+    // socket.broadcast.emit("add to queue", data);
+    socket.emit("render all on queue", peopleOnQueue);
+    socket.broadcast.emit("render all on queue", peopleOnQueue);
+  });
+
+  socket.on("leave queue", (id) => {
+    peopleOnQueue = peopleOnQueue.filter((person) => person.id != Number(id));
+    socket.broadcast.emit("render all on queue", peopleOnQueue);
+    socket.emit("render all on queue", peopleOnQueue);
   });
 });
-
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT);
