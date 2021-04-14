@@ -54,6 +54,7 @@
       <label for="name">qual é teu nome?</label>
       <br />
       <input
+        autofocus
         type="text"
         name="name"
         id="name"
@@ -90,6 +91,8 @@
               : "Filinha online!";
 
           $(document).prop("title", pageTitle);
+        } else {
+          $(document).prop("title", "Filinha online!");
         }
 
         $("#queue").empty();
